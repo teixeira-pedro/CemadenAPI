@@ -3,6 +3,8 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 import re
 import math
+import json
+from unidecode import unidecode
 
 def CEMADENDataHora2datetime(string):
     padrao = r"[// ::]"
@@ -63,10 +65,16 @@ def converte_numeros(n):
         return math.nan
     return float(n)
 
-def getRiscoRios():
+def getRiscoRios(data_locais):
+    Locais={}
+    with open(data_locais, "r") as arquivo:
+        Locais = json.load(arquivo)
+
     ''';  retorna JSON contendo chave
 municipiosxcurso de água, e cada municipio retorna uma lista com ultimo status e datetime do ultimmo status'''    
     J={}
+    #print(Locais)
+
     # Fazer uma requisição GET para a página
     bacias = 'baia_de_guanabara,guandu,baixo_paraiba_do_sul_e_itabapoana,piabanha,medio_paraiba_do_sul,macae_e_das_ostras,baia_da_ilha_grande,lagos_sao_joao,rio_dois_rios'.split(',')
     for bacia in bacias :
@@ -105,19 +113,23 @@ municipiosxcurso de água, e cada municipio retorna uma lista com ultimo status 
                         else:
                             conteudo = coluna.text.strip()
                             linhaz.append(conteudo)
-                            
                     ###if len(linhaz)==6:
                     ###    J[linhaz[0]] = [linhaz[2],CEMADENDataHora2datetime(linhaz[3])]
                     if len(linhaz) == 16:
                         #print(linhaz)
-                        local=linhaz[0]+'-'+linhaz[1]+'-'+linhaz[2]
+                        local=linhaz[0]+'*'+linhaz[1]+'*'+linhaz[2]
+                        ll=unidecode(local.lower()).replace('br-101','br101')
+                        #print(Locais[ll])
                         status_rio=linhaz[3]
                         status=linhaz[5]
                         U=linhaz
                         mmChuva,mmUlt1h,mmUlt4h,mmUlt24h,mmUlt96h,mmUltMes=converte_numeros(U[6]),converte_numeros(U[7]),converte_numeros(U[8]),converte_numeros(U[9]),converte_numeros(U[10]),converte_numeros(U[11])
                         mRio,mRio15min,mRio30min,mRio45min=converte_numeros(U[12]),converte_numeros(U[13]),converte_numeros(U[14]),converte_numeros(U[15])
                         dhtOcorr=CEMADENDataHora2datetime(linhaz[4]+':00')
-                        print(local,dhtOcorr,status_rio,status,mmChuva,mmUlt1h,mmUlt4h,mmUlt24h,mmUlt96h,mmUltMes,mRio,mRio15min,mRio30min,mRio45min)
+                        print(local.replace('*','-'),'|',Locais[ll][0],'|',Locais[ll][1],'|',dhtOcorr,'|',status_rio,'|',status,'|',
+                              mmChuva,'|',mmUlt1h,'|',mmUlt4h,'|',mmUlt24h,'|',mmUlt96h,'|',mmUltMes,'|',
+                              mRio,'|',mRio15min,'|',mRio30min,'|',mRio45min)
+                        #print(local,dhtOcorr,status_rio,status,mmChuva,mmUlt1h,mmUlt4h,mmUlt24h,mmUlt96h,mmUltMes,mRio,mRio15min,mRio30min,mRio45min)
                         # Imprimir o conteúdo ou fazer o que desejar com ele
                         #print(conteudo)
                         J[local]={'dht':dhtOcorr , 'status_rio':status_rio,'status':status,
@@ -132,4 +144,6 @@ municipiosxcurso de água, e cada municipio retorna uma lista com ultimo status 
 
 #print(getRisco(0))
 #print(getRisco(1))
-print(getRiscoRios())
+#print(
+getRiscoRios('CEMADEN_Estacoes_localiz.dat')
+#)
