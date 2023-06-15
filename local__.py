@@ -1,6 +1,7 @@
 import pycep_correios
 #import consulta_correios IMPORTED AND CORRECTED TO HERE
 
+import re
 from geopy.geocoders import Nominatim
 from geopy import distance
 
@@ -251,6 +252,16 @@ def get_perimetro(P,d):
     theta=dist_graus_y(d/1000)
     phi=dist_graus_x(d/1000)
     return [ [x+phi,x-phi] , [y+theta,y-theta] ]
+
+def cemaden_coordenadas_2_GEOPY(s):
+    '''Função que converte coordenadas em graus minutos e segundos em decimais,
+    pois o CEMADEN Informa as coordenadas em Graus Minutos e Segundos (ex.:-21° 59' 47")
+    porém, o geoPy só aceita em decimal, (ex.:-48.85614465)'''
+    padrao = re.compile(r'-?\d+')
+    numeros = padrao.findall(s)
+    graus, minutos,segundos=int(numeros[0]),int(numeros[1]),int(numeros[2])
+    #convertendo latitudes para decimal, pois o geoPy só aceita assim Latitude = 48.85614465, Longitude = 2.29782039332223
+    return (graus/abs(graus)) * (abs(graus)+ (minutos/60) + (segundos/3600)) #a latitude em decimal
 
 
 
