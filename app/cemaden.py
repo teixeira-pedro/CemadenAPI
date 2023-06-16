@@ -1,4 +1,5 @@
 import requests
+from producer import KafkaProducer
 from bs4 import BeautifulSoup
 from datetime import datetime
 import re
@@ -52,6 +53,17 @@ municipios, e cada municipio retorna uma lista com ultimo status e datetime do u
     else:
         print("Falha ao fazer a requisição.")
     return J
+
+def produzir_mensagem(conteudo: dict):
+    """
+    Funcao responsavel por produzir a mensagem para o topico Kafka
+    """
+    topicoKafka = KafkaProducer()
+    # Resgatando produtor
+    produtor = topicoKafka.producer
+    # Enviando mensagem 
+    topicoKafka.enviar_mensagem(conteudo, produtor)
+
 
 def tem_string(a,b):
     #print(a,b)
@@ -126,15 +138,19 @@ municipiosxcurso de água, e cada municipio retorna uma lista com ultimo status 
                         mmChuva,mmUlt1h,mmUlt4h,mmUlt24h,mmUlt96h,mmUltMes=converte_numeros(U[6]),converte_numeros(U[7]),converte_numeros(U[8]),converte_numeros(U[9]),converte_numeros(U[10]),converte_numeros(U[11])
                         mRio,mRio15min,mRio30min,mRio45min=converte_numeros(U[12]),converte_numeros(U[13]),converte_numeros(U[14]),converte_numeros(U[15])
                         dhtOcorr=CEMADENDataHora2datetime(linhaz[4]+':00')
-                        print(local.replace('*','-'),'|',Locais[ll][0],'|',Locais[ll][1],'|',dhtOcorr,'|',status_rio,'|',status,'|',
-                              mmChuva,'|',mmUlt1h,'|',mmUlt4h,'|',mmUlt24h,'|',mmUlt96h,'|',mmUltMes,'|',
-                              mRio,'|',mRio15min,'|',mRio30min,'|',mRio45min)
+                        if ll in Locais:
+                            print(local.replace('*','-'),'|',Locais[ll][0],'|',Locais[ll][1],'|',dhtOcorr,'|',status_rio,'|',status,'|',
+                                mmChuva,'|',mmUlt1h,'|',mmUlt4h,'|',mmUlt24h,'|',mmUlt96h,'|',mmUltMes,'|',
+                                mRio,'|',mRio15min,'|',mRio30min,'|',mRio45min)
+                        else:
+                            pass
                         #print(local,dhtOcorr,status_rio,status,mmChuva,mmUlt1h,mmUlt4h,mmUlt24h,mmUlt96h,mmUltMes,mRio,mRio15min,mRio30min,mRio45min)
                         # Imprimir o conteúdo ou fazer o que desejar com ele
                         #print(conteudo)
                         J[local]={'dht':dhtOcorr , 'status_rio':status_rio,'status':status,
                                   'mmChuva':mmChuva , 'mmUlt1h':mmUlt1h,'mmUlt4h':mmUlt4h,'mmUlt24h':mmUlt24h,'mmUlt96h':mmUlt96h,'mmUltMes':mmUltMes,
                                   'mRio':mRio,'mRio15min':mRio15min,'mRio30min':mRio30min,'mRio45min':mRio45min}
+                        produzir_mensagem(J[local])
             else:
                 print("Nenhuma tabela encontrada na página.")
         else:

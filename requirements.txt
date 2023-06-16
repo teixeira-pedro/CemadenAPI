@@ -1,0 +1,7 @@
+beautifulsoup4
+requests
+geopy
+pycep-correios
+python-Levenshtein
+Unidecode
+kafka
