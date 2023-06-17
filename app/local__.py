@@ -1,9 +1,10 @@
-import pycep_correios
+#import pycep_correios
 #import consulta_correios IMPORTED AND CORRECTED TO HERE
 
 import re
 from geopy.geocoders import Nominatim
-from geopy import distance
+from geopy.distance import distance
+import math
 
 
 
@@ -234,11 +235,17 @@ def dist_coordenadas(xa,ya,xb,yb,geo):
 
 def dist_graus_x(d):
     #R=distance.EARTH_RADIUS
-    return d/111.32
+    return d/111320
 
 def dist_graus_y(d):
     #R=distance.EARTH_RADIUS
     return dist_graus_x(d)
+
+def metros_para_graus_latitude_y(distancia_metros):
+    return distancia_metros / 111320
+
+def metros_para_graus_longitude_x(distancia_metros, latitude):
+    return distancia_metros / (111320 * math.cos(math.radians(latitude)))
 
 def intervalo_ultimos_segundos(t):
     #t em segundos
@@ -249,9 +256,42 @@ def get_perimetro(P,d):
     x = P[0]
     y = P[1]
     #dist em metros
-    theta=dist_graus_y(d/1000)
-    phi=dist_graus_x(d/1000)
+    theta=metros_para_graus_latitude_y(d)
+    phi=metros_para_graus_longitude_x(d,y)
     return [ [x+phi,x-phi] , [y+theta,y-theta] ]
+
+def get_perimetro_novo(P,distancia,granularidade,granularidade_angular):
+    if granularidade_angular <=0 or granularidade_angular >=360 or granularidade>distancia :
+        return None
+    '''distancia e granularidade em metros ; granularidade angular : em graus : dominio : (0º,360º) '''
+    latitude = P[0]
+    longitude = P[1]
+    chunkss=int(distancia/granularidade)
+    D_lat = distancia / 111000
+    D_lon = distancia / (111000 * distance((latitude, longitude), (latitude + 1, longitude)).meters)
+    pontos = [P]
+    for angulo in range(0,360,granularidade_angular):
+        LaMax= latitude + (D_lat*math.sin(math.radians(angulo)))
+        LoMax= longitude + (D_lon*math.cos(math.radians(angulo)))
+        incrLa=(LaMax-latitude)/chunkss
+        incrLo=(LoMax-longitude)/chunkss
+        print('P=[', latitude, ',', longitude, ']', 'lat_max=',
+              LaMax, ';', 'lon_max=', LoMax, '; para o angulo gamma = ',angulo,'º ; incrementos = ;',[incrLa,incrLo])
+        for i in range(chunkss):
+            ponto_novo=[latitude+(incrLa*i),longitude+(incrLo*i)]
+            pontos.append(ponto_novo)
+            #print(ponto_novo)
+
+    #lat_min = latitude - d_lat
+    #lat_max = latitude + d_lat
+    #lon_min = longitude - d_lon
+    #lon_max = longitude + d_lon
+    #for lat in range(int(lat_min), int(lat_max), granularidade):
+    #    for lon in range(int(lon_min), int(lon_max), granularidade):
+    #        ponto = [lat + granularidade / 2, lon + granularidade / 2]
+    #        pontos.append(ponto)
+    return pontos
+
 
 def cemaden_coordenadas_2_GEOPY(s):
     '''Função que converte coordenadas em graus minutos e segundos em decimais,
@@ -265,4 +305,4 @@ def cemaden_coordenadas_2_GEOPY(s):
 
 
 
-
+print(get_perimetro_novo([40.7128, -74.0060], 1000, 100,45))
