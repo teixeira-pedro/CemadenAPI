@@ -1,11 +1,11 @@
 #import pycep_correios
 #import consulta_correios IMPORTED AND CORRECTED TO HERE
-
+#https://towardsdatascience.com/work-with-geospatial-data-and-create-interactive-maps-using-geopy-and-plotly-28178d2868f1
 import re
 from geopy.geocoders import Nominatim
 from geopy.distance import distance
 import math
-
+import folium
 
 
 #from FogoCruzado import *
@@ -251,46 +251,50 @@ def intervalo_ultimos_segundos(t):
     #t em segundos
     return datetime.now()-timedelta(seconds=t)
 
+def get_perimetro(P,d,granularidade,granularidade_angular):
+    if granularidade <= 0 or granularidade>d or granularidade_angular <=0 or granularidade_angular >=360 :
+        return None
+    x = P[0]
+    y = P[1]
+    #dist em metros
+    pontos = [ [x,y] ]#, [x,y+theta],[x,y-theta],[x+phi,y],[x-phi,y] ]
+    if granularidade == d:
+        return pontos
+    partes=int(d/granularidade)
+    setores=int(360/granularidade_angular)
+    for i in range(setores):
+        angulo=granularidade_angular*i
+        for i in range(partes):
+            d_=i*granularidade
+            Pnew = get_point_at_distance(lat1=x, lon1=y, d=d_, bearing=angulo)  # DELTA(x,y,d,angulo)
+            pontos.append(Pnew)
+    return pontos
 
-def get_perimetro(P,d):
+
+def get_perimetro_old(P,d,granularidade):
+    if granularidade <= 0 or granularidade>d :
+        return none
     x = P[0]
     y = P[1]
     #dist em metros
     theta=metros_para_graus_latitude_y(d)
     phi=metros_para_graus_longitude_x(d,y)
-    return [ [x+phi,x-phi] , [y+theta,y-theta] ]
-
-def get_perimetro_novo(P,distancia,granularidade,granularidade_angular):
-    if granularidade_angular <=0 or granularidade_angular >=360 or granularidade>distancia :
-        return None
-    '''distancia e granularidade em metros ; granularidade angular : em graus : dominio : (0º,360º) '''
-    latitude = P[0]
-    longitude = P[1]
-    chunkss=int(distancia/granularidade)
-    D_lat = distancia / 111000
-    D_lon = distancia / (111000 * distance((latitude, longitude), (latitude + 1, longitude)).meters)
-    pontos = [P]
-    for angulo in range(0,360,granularidade_angular):
-        LaMax= latitude + (D_lat*math.sin(math.radians(angulo)))
-        LoMax= longitude + (D_lon*math.cos(math.radians(angulo)))
-        incrLa=(LaMax-latitude)/chunkss
-        incrLo=(LoMax-longitude)/chunkss
-        print('P=[', latitude, ',', longitude, ']', 'lat_max=',
-              LaMax, ';', 'lon_max=', LoMax, '; para o angulo gamma = ',angulo,'º ; incrementos = ;',[incrLa,incrLo])
-        for i in range(chunkss):
-            ponto_novo=[latitude+(incrLa*i),longitude+(incrLo*i)]
-            pontos.append(ponto_novo)
-            #print(ponto_novo)
-
-    #lat_min = latitude - d_lat
-    #lat_max = latitude + d_lat
-    #lon_min = longitude - d_lon
-    #lon_max = longitude + d_lon
-    #for lat in range(int(lat_min), int(lat_max), granularidade):
-    #    for lon in range(int(lon_min), int(lon_max), granularidade):
-    #        ponto = [lat + granularidade / 2, lon + granularidade / 2]
-    #        pontos.append(ponto)
+    pontos = [ [x,y] , [x,y+theta],[x,y-theta],[x+phi,y],[x-phi,y] ]
+    if granularidade == d:
+        return pontos
+    partes=int(d/granularidade)
+    incr_theta=theta/partes
+    incr_phi=phi/partes
+    for i in range(partes):
+        pontos.append([x,y+(i*incr_theta)])
+        pontos.append([x,y-(i*incr_theta)])
+        pontos.append([x+(i*incr_phi),y])
+        pontos.append([x-(i*incr_phi),y])
     return pontos
+
+
+
+
 
 
 def cemaden_coordenadas_2_GEOPY(s):
@@ -303,6 +307,81 @@ def cemaden_coordenadas_2_GEOPY(s):
     #convertendo latitudes para decimal, pois o geoPy só aceita assim Latitude = 48.85614465, Longitude = 2.29782039332223
     return (graus/abs(graus)) * (abs(graus)+ (minutos/60) + (segundos/3600)) #a latitude em decimal
 
+def mapeia(centralizado_em,zoom):
+    mapa=None
+    if (not zoom) or zoom <= 0 :
+        mapa =folium.Map(location=centralizado_em)
+    else:
+        mapa =folium.Map(location=centralizado_em,zoom_start=zoom)
+    return mapa
+
+def add_circulo_mapa(mapa,P,d):
+    x=P[0]
+    y=P[1]
+    mapa.add_child(folium.Circle(
+        location=(x, y),
+        radius=d,
+        popup=" ",
+        color="#3186cc",
+        fill=True,
+        fill_color="#3186cc",
+    ))
+    #return mapa
+
+def add_pontos_mapa(mapa,Ps):
+    cor = 'green'
+    for i in range(len(Ps)):
+        P=Ps[i]
+        if i==0:
+            mapa.add_child(folium.Marker(location=P, icon=folium.Icon(color='green')))
+        else:
+            mapa.add_child(folium.Marker(location=P, icon=folium.Icon(color='red')))
+    return mapa
 
 
-print(get_perimetro_novo([40.7128, -74.0060], 1000, 100,45))
+def get_point_at_distance(lat1, lon1, d, bearing, R=6371):
+    d=d/1000
+    """
+    lat: initial latitude, in degrees
+    lon: initial longitude, in degrees
+    d: target distance from initial
+    bearing: (true) heading in degrees
+    R: optional radius of sphere, defaults to mean radius of earth
+
+    Returns new lat/lon coordinate {d}m from initial, in degrees
+    """
+    lat1 = math.radians(lat1)
+    lon1 = math.radians(lon1)
+    a = math.radians(bearing)
+    lat2 = math.asin(math.sin(lat1) * math.cos(d/R) + math.cos(lat1) * math.sin(d/R) * math.cos(a))
+    lon2 = lon1 + math.atan2(
+        math.sin(a) * math.sin(d/R) * math.cos(lat1),
+        math.cos(d/R) - math.sin(lat1) * math.sin(lat2)
+    )
+    return [math.degrees(lat2), math.degrees(lon2)]
+
+def mostra_mapa(mapa,nome_mapa_salvar):
+    mapa.save(nome_mapa_salvar)
+    return nome_mapa_salvar
+
+
+
+P2=get_lugar_nome('carrefour manilha',geo())
+P2=[P2.latitude,P2.longitude]
+#print()
+#P=[0,0]
+P=P2
+#P=[1,1]
+#P=[40.7128, -74.0060]
+#print(get_perimetro_novo(P, 1000, 100,45))
+#print('mapeia([],0)=',mapeia([],0),'|','mapeia([40.7128, -74.0060],0)=',mapeia([40.7128, -74.0060],0),'|')
+mapa=mapeia(P,0)
+#Ps=get_perimetro_novo([40.7128, -74.0060], 1000, 250,90)
+Ps=get_perimetro(P,1000,250,10)
+mapa=add_pontos_mapa(mapa,Ps)
+add_circulo_mapa(mapa,P,1000)
+a=mostra_mapa(mapa,'teste2.html')
+#for P in Ps:
+#    print(get_lugar_coordenadas(P[0],P[1],geo()))
+
+
