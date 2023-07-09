@@ -1,0 +1,21 @@
+{
+    "pk": "-22.906667|-42.814583",
+    "x": "-22.906667",
+    "y": "-42.814583",
+    "dht": "2023-07-08T19:30:00",
+    "status_rio": "[\u2193]DESCEDO",
+    "status": "VIGIL\u00c2NCIA",
+    "mmChuva": "0.0",
+    "mmUlt1h": "0.0",
+    "mmUlt4h": "0.0",
+    "mmUlt24h": "0.0",
+    "mmUlt96h": "0.0",
+    "mmUltMes": "NaN",
+    "mRio": "1.67",
+    "mRio15min": "1.69",
+    "mRio30min": "1.67",
+    "mRio45min": "1.69",
+    "ano": "2023",
+    "anomes": "202307",
+    "anomesdia": "20230709"
+}

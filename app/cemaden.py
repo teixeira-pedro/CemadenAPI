@@ -1,5 +1,5 @@
 import requests
-from producer import KafkaProducer
+from producer import ProdutorTopico
 from bs4 import BeautifulSoup
 from datetime import datetime
 import re
@@ -58,7 +58,7 @@ def produzir_mensagem(conteudo: dict):
     """
     Funcao responsavel por produzir a mensagem para o topico Kafka
     """
-    topicoKafka = KafkaProducer()
+    topicoKafka = ProdutorTopico()
     # Resgatando produtor
     produtor = topicoKafka.producer
     # Enviando mensagem 
@@ -142,15 +142,15 @@ municipiosxcurso de água, e cada municipio retorna uma lista com ultimo status 
                             print(local.replace('*','-'),'|',Locais[ll][0],'|',Locais[ll][1],'|',dhtOcorr,'|',status_rio,'|',status,'|',
                                 mmChuva,'|',mmUlt1h,'|',mmUlt4h,'|',mmUlt24h,'|',mmUlt96h,'|',mmUltMes,'|',
                                 mRio,'|',mRio15min,'|',mRio30min,'|',mRio45min)
+                        
+                            #print(local,dhtOcorr,status_rio,status,mmChuva,mmUlt1h,mmUlt4h,mmUlt24h,mmUlt96h,mmUltMes,mRio,mRio15min,mRio30min,mRio45min)
+                            # Imprimir o conteúdo ou fazer o que desejar com ele
+                            #print(conteudo)
+                            J[local]={'x': Locais[ll][0],'y': Locais[ll][1],'dht':dhtOcorr , 'status_rio':status_rio,'status':status,
+                                    'mmChuva':mmChuva , 'mmUlt1h':mmUlt1h,'mmUlt4h':mmUlt4h,'mmUlt24h':mmUlt24h,'mmUlt96h':mmUlt96h,'mmUltMes':mmUltMes,
+                                    'mRio':mRio,'mRio15min':mRio15min,'mRio30min':mRio30min,'mRio45min':mRio45min}
                         else:
                             pass
-                        #print(local,dhtOcorr,status_rio,status,mmChuva,mmUlt1h,mmUlt4h,mmUlt24h,mmUlt96h,mmUltMes,mRio,mRio15min,mRio30min,mRio45min)
-                        # Imprimir o conteúdo ou fazer o que desejar com ele
-                        #print(conteudo)
-                        J[local]={'dht':dhtOcorr , 'status_rio':status_rio,'status':status,
-                                  'mmChuva':mmChuva , 'mmUlt1h':mmUlt1h,'mmUlt4h':mmUlt4h,'mmUlt24h':mmUlt24h,'mmUlt96h':mmUlt96h,'mmUltMes':mmUltMes,
-                                  'mRio':mRio,'mRio15min':mRio15min,'mRio30min':mRio30min,'mRio45min':mRio45min}
-                        produzir_mensagem(J[local])
             else:
                 print("Nenhuma tabela encontrada na página.")
         else:
@@ -161,5 +161,5 @@ municipiosxcurso de água, e cada municipio retorna uma lista com ultimo status 
 #print(getRisco(0))
 #print(getRisco(1))
 #print(
-getRiscoRios('CEMADEN_Estacoes_localiz.dat')
+# getRiscoRios('CEMADEN_Estacoes_localiz.dat')
 #)

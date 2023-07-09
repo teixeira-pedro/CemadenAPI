@@ -7,12 +7,53 @@ networks:
             config:
                 - subnet: "172.18.0.0/16"
 services:
+   spark-master:
+      build:
+        context: .
+        dockerfile: DockerfileSpark
+      links:
+        - "db"
+      ports:
+        - "9000:8080"
+        - "7077:7077"
+      volumes:
+        - ./appsspark:/opt/spark-apps
+        - ./data:/opt/spark-data
+      environment:
+        - SPARK_LOCAL_IP=spark-master
+        - SPARK_WORKLOAD=master
+        - SPARK_DRIVER_MEMORY=1G
+        - SPARK_EXECUTOR_MEMORY=1G
+        - SPARK_MASTER_CORES=1
+        - SPARK_MASTER=spark://spark-master:7077
+        - SPARK_MASTER_MEMORY=1G
+      networks:
+        datapipeline:
+            ipv4_address: 172.18.0.6
    extractionscript:
       build: .   
+      links:
+         - "db"
       networks:
          datapipeline:
             ipv4_address: 172.18.0.2
-            
+   db:
+     container_name: mydb
+     image: mysql:5.7
+     ports:
+       - "32001:3306"
+     command: --init-file /data/application/init.sql
+     volumes:
+        - ./init.sql:/data/application/init.sql
+     environment:
+       MYSQL_ROOT_PASSWORD: root
+       MYSQL_ROOT_USER: root
+       MYSQL_DATABASE: ggvd
+       MYSQL_USER: dev
+       MYSQL_PASSWORD: dev
+     networks:
+        datapipeline:
+            ipv4_address: 172.18.0.7
    zookeeper:
      image: confluentinc/cp-zookeeper:latest
      environment:
