@@ -49,8 +49,8 @@ services:
        MYSQL_ROOT_PASSWORD: root
        MYSQL_ROOT_USER: root
        MYSQL_DATABASE: ggvd
-       MYSQL_USER: root
-       MYSQL_PASSWORD: root
+       MYSQL_USER: dev
+       MYSQL_PASSWORD: dev
      networks:
         datapipeline:
             ipv4_address: 172.18.0.7

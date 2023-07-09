@@ -27,12 +27,16 @@ def processar_dados_iniciais():
                     "latitude": item.latitude
                 } for item in locais_em_volta ]
         df = pd.DataFrame(dados).drop_duplicates(subset=["latitude", "longitude"])
-        read_df = pd.read_sql(f'SELECT * FROM locais_em_volta where pk in {tuple(df["pk"])}', con=engine)
-        result = pd.concat([df,read_df]).drop_duplicates(keep=False, subset=['pk'])
-        
+        try:
+            read_df = pd.read_sql(f'SELECT * FROM locais_em_volta where pk in {tuple(df["pk"])}', con=engine)
+            result = pd.concat([df,read_df]).drop_duplicates(keep=False, subset=['pk'])
+        except:
+            result = df
+
         if not result.empty:
             df.to_sql('locais_em_volta', con=engine, if_exists='append', index=False)
-        produzir_mensagem(J[estacao])
+            J[estacao]["pk"] = f"{P[0]}|{P[1]}"
+            produzir_mensagem(J[estacao])
     
     print('Fim execucao script.')
 
