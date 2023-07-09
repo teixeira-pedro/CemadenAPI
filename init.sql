@@ -1,0 +1,11 @@
+CREATE DATABASE IF NOT EXISTS ggvd;
+
+CREATE TABLE IF NOT EXISTS locais_em_volta(
+    pk VARCHAR(255) NOT NULL,
+    fk VARCHAR(255) NOT NULL,
+    endereco VARCHAR(3000) NOT NULL,
+    altitude VARCHAR(100) NOT NULL,
+    longitude VARCHAR(100) NOT NULL,
+    latitude VARCHAR(100) NOT NULL,
+    PRIMARY KEY(pk)
+);

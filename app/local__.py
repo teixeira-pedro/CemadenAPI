@@ -5,6 +5,7 @@ import re
 from geopy.geocoders import Nominatim
 from geopy.distance import distance
 import math
+import backoff
 import folium
 
 
@@ -222,6 +223,9 @@ def coordenadas_lugar(l):
     return (l.latitude,l.longitude)
 #LATITUDE =X LONGITUDE = Y
 
+@backoff.on_exception(backoff.expo,
+                      Exception,
+                      max_time=300)
 def get_lugar_coordenadas(x,y,geo):
     lugar=geo.reverse(str(x)+', '+str(y))
     return lugar
@@ -366,22 +370,22 @@ def mostra_mapa(mapa,nome_mapa_salvar):
 
 
 
-P2=get_lugar_nome('carrefour manilha',geo())
-P2=[P2.latitude,P2.longitude]
-#print()
-#P=[0,0]
-P=P2
-#P=[1,1]
-#P=[40.7128, -74.0060]
-#print(get_perimetro_novo(P, 1000, 100,45))
-#print('mapeia([],0)=',mapeia([],0),'|','mapeia([40.7128, -74.0060],0)=',mapeia([40.7128, -74.0060],0),'|')
-mapa=mapeia(P,0)
-#Ps=get_perimetro_novo([40.7128, -74.0060], 1000, 250,90)
-Ps=get_perimetro(P,1000,250,10)
-mapa=add_pontos_mapa(mapa,Ps)
-add_circulo_mapa(mapa,P,1000)
-a=mostra_mapa(mapa,'teste2.html')
-#for P in Ps:
+# P2=get_lugar_nome('carrefour manilha',geo())
+# P2=[P2.latitude,P2.longitude]
+# #print()
+# #P=[0,0]
+# P=P2
+# #P=[1,1]
+# #P=[40.7128, -74.0060]
+# #print(get_perimetro_novo(P, 1000, 100,45))
+# #print('mapeia([],0)=',mapeia([],0),'|','mapeia([40.7128, -74.0060],0)=',mapeia([40.7128, -74.0060],0),'|')
+# mapa=mapeia(P,0)
+# #Ps=get_perimetro_novo([40.7128, -74.0060], 1000, 250,90)
+# Ps=get_perimetro(P,1000,250,10)
+# mapa=add_pontos_mapa(mapa,Ps)
+# add_circulo_mapa(mapa,P,1000)
+# a=mostra_mapa(mapa,'teste2.html')
+# for P in Ps:
 #    print(get_lugar_coordenadas(P[0],P[1],geo()))
 
 

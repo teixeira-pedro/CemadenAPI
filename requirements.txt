@@ -1,7 +1,13 @@
 beautifulsoup4
 requests
+backoff
 geopy
 pycep-correios
 python-Levenshtein
 Unidecode
-kafka
+kafka-python
+folium
+mysql-connector-python
+pandas
+SQLAlchemy
+pymysql
