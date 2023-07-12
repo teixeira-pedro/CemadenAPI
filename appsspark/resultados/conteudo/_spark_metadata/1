@@ -1,0 +1,2 @@
+v1
+{"path":"file:///opt/spark-apps/resultados/conteudo/ano=__HIVE_DEFAULT_PARTITION__/anomes=__HIVE_DEFAULT_PARTITION__/anomesdia=__HIVE_DEFAULT_PARTITION__/part-00000-53ec5472-2077-4211-bf89-5ffe9420a8dd.c000.snappy.parquet","size":4443,"isDir":false,"modificationTime":1689126347656,"blockReplication":1,"blockSize":33554432,"action":"add"}

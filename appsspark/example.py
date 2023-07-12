@@ -1,6 +1,6 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.types import StructType, StructField, StringType, FloatType
-from pyspark.sql.functions import from_json,col, count
+from pyspark.sql.functions import from_json,col, count, date_format, to_timestamp, lpad, year, month, dayofmonth
 
 import json
 
@@ -33,6 +33,8 @@ dados_estacao.printSchema()
 def processar_informacao_estacao_advinda(df, epoch_id):
     ## Selecionando a coluna concatenada para que a mesma cruze com fk.
     estacao_batch_selecionado = df.selectExpr("pk as fk")
+    ## Selecionando dado reserva com todas as colunas
+    estacao_batch_todas_as_colunas = df.selectExpr("*")
     ## Verificando existencia de valores
     dados_presentes = estacao_batch_selecionado.count()
     ## Recolhendo fk
@@ -53,18 +55,16 @@ def processar_informacao_estacao_advinda(df, epoch_id):
         .option("user", "dev")\
         .option("password", "dev")\
         .load()
-        if dados_pontos.count > 0:
+        if dados_pontos.count() > 0:
             ## Juncao informacao estacao com locais afetados
-            df.createOrReplaceTempView("dadoEstacao")
-            dados_pontos.createOrReplaceTempView("dadosPontos")
+            dados_estacao_data_formatada = estacao_batch_todas_as_colunas.withColumn("datahoraocc", to_timestamp(col("dht"), "yyyy-MM-dd'T'HH:mm:ss"))
             ## Realizando consulta de juncao
-            dados_pontos_com_dados_estacao = spark.sql('''
-                SELECT de.*, dp.*, date_format(to_timestamp(de.dht, 'yyyy-MM-ddTHH:mm:ss'), 'yyyy-MM-dd HH:mm') as datahoraocc,
-                  FROM dadosEstacao de 
-                  INNER JOIN dadosPontos dp ON de.pk = dp.fk
-            ''')
-            dados_pontos_com_dados_estacao_particionados = dados_pontos_com_dados_estacao.selectExpr("cast(year(datahoraocc) as string) as ano, lpad(cast(month(datahoraocc) as string), 2, '0') as anomes, lpad(cast(dayofmonth(data) as string), 2, '0') as anomesdia")
-            dados_pontos_com_dados_estacao_particionados.show(truncate=False)
+            dados_pontos_com_dados_estacao = dados_estacao_data_formatada.join(dados_pontos, dados_estacao_data_formatada.pk == dados_pontos.fk, "inner") 
+            ## Realizando criacao de particoes
+            dados_pontos_com_dados_estacao_particionados = dados_pontos_com_dados_estacao.withColumn("ano",       year(col("datahoraocc")).cast("string"))\
+                                                                                         .withColumn("anomes",     lpad(month(col("datahoraocc")).cast("string"), 2, '0'))\
+                                                                                         .withColumn("anomesdia", lpad(dayofmonth(col("datahoraocc")).cast("string"), 2, '0'))
+            dados_pontos_com_dados_estacao_particionados.write.parquet("batch_resultados/")
             ## Retornando informacoes de juncao
             return dados_pontos_com_dados_estacao_particionados
 
@@ -79,10 +79,10 @@ def processar_informacao_estacao_advinda(df, epoch_id):
 dados_estacao.writeStream\
    .foreachBatch(processar_informacao_estacao_advinda)\
    .format("parquet")\
-   .outputMode("append")\
+   .trigger(processingTime='45 seconds')\
    .option("path", "resultados/conteudo")\
    .option("checkpointLocation", "resultados/checkpoint")\
-   .trigger(processingTime='45 seconds')\
    .partitionBy("ano", "anomes", "anomesdia")\
    .start()\
    .awaitTermination()
+
