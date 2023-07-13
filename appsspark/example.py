@@ -4,7 +4,7 @@ from pyspark.sql.functions import from_json,col, count, date_format, to_timestam
 
 import json
 
-schema_path = "schema.json"
+schema_path = "/opt/spark-apps/schema.json"
 
 with open(schema_path) as file:
     schema_data = json.load(file)
