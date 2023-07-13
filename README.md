@@ -5,7 +5,7 @@
 2. Abra o terminal do windows em duas janelas.
 
 3. Vá até a raíz do projeto e execute o comando:
-````bash
+```bash
 docker-compose up -d
 ```
 
