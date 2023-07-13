@@ -18,6 +18,7 @@ spark = SparkSession.\
 ## Lendo streaming
 df = spark.readStream\
     .format("kafka")\
+    .option("failOnDataLoss", "false")\
     .option("kafka.bootstrap.servers", "kafka:9093")\
     .option("subscribe", "topic-test")\
     .option("startingOffsets", "latest")\
@@ -59,14 +60,22 @@ def processar_informacao_estacao_advinda(df, epoch_id):
             ## Juncao informacao estacao com locais afetados
             dados_estacao_data_formatada = estacao_batch_todas_as_colunas.withColumn("datahoraocc", to_timestamp(col("dht"), "yyyy-MM-dd'T'HH:mm:ss"))
             ## Realizando consulta de juncao
-            dados_pontos_com_dados_estacao = dados_estacao_data_formatada.join(dados_pontos, dados_estacao_data_formatada.pk == dados_pontos.fk, "inner") 
+            dados_estacao_data_formatada = dados_estacao_data_formatada.withColumnRenamed("pk", "estacao_pk")
+            dados_pontos_com_dados_estacao = dados_estacao_data_formatada.join(dados_pontos, dados_estacao_data_formatada.estacao_pk == dados_pontos.fk, "inner") 
             ## Realizando criacao de particoes
             dados_pontos_com_dados_estacao_particionados = dados_pontos_com_dados_estacao.withColumn("ano",       year(col("datahoraocc")).cast("string"))\
                                                                                          .withColumn("anomes",     lpad(month(col("datahoraocc")).cast("string"), 2, '0'))\
                                                                                          .withColumn("anomesdia", lpad(dayofmonth(col("datahoraocc")).cast("string"), 2, '0'))
-            dados_pontos_com_dados_estacao_particionados.write.parquet("batch_resultados/")
+            dados_pontos_com_dados_estacao_particionados.write\
+               .option("maxRecordsPerFile", 1000)\
+               .partitionBy("ano", "anomes", "anomesdia")\
+               .mode("append")\
+               .parquet("batch_resultados/")
+            print("Dados processados com sucesso.")
             ## Retornando informacoes de juncao
             return dados_pontos_com_dados_estacao_particionados
+        else:
+            print("Dados vazios, prosseguindo.")
 
         
 ## Controle de streaming
@@ -78,11 +87,13 @@ def processar_informacao_estacao_advinda(df, epoch_id):
 ## Salvando dados partitionados de modo a fica mais facil para localiza-los posteriormente
 dados_estacao.writeStream\
    .foreachBatch(processar_informacao_estacao_advinda)\
-   .format("parquet")\
    .trigger(processingTime='45 seconds')\
-   .option("path", "resultados/conteudo")\
-   .option("checkpointLocation", "resultados/checkpoint")\
-   .partitionBy("ano", "anomes", "anomesdia")\
    .start()\
    .awaitTermination()
 
+# .format("parquet")\
+
+#    .option("path", "resultados/conteudo")\
+#    .option("checkpointLocation", "resultados/checkpoint")\
+
+#    .partitionBy("ano", "anomes", "anomesdia")\
