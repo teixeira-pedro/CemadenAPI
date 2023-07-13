@@ -2,7 +2,7 @@
 
 1. É necessário ter o docker instalado.
 
-2. Abra o terminal do windows em duas janelas.
+2. Abra o terminal do WSL2 em duas janelas.
 
 3. Vá até a raíz do projeto e execute o comando:
 ```bash
