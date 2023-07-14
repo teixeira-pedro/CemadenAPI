@@ -5,7 +5,8 @@ import pandas as pd
 from db_connection import *
 
 def processar_dados_iniciais():
-    J=getRiscoRios('./cemadem_app/app/CEMADEN_Estacoes_localiz.dat')
+    # J=getRiscoRios('./cemadem_app/app/CEMADEN_Estacoes_localiz.dat')
+    J=getRiscoRios('cemadem_app/app/CEMADEN_Estacoes_localiz.dat')
     LocaisEmVoltaEstacoes={}
     lista_resultados = []
     #print(J)
